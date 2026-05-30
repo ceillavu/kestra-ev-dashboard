@@ -1,0 +1,265 @@
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<div id="kestra-root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+const {useState,useEffect,useRef}=React;
+const BG='#080c12',ACC='#00b4ff',S={
+  wrap:{fontFamily:'Rajdhani,sans-serif',background:BG,color:'#e8f4ff',minHeight:'600px',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden',userSelect:'none'},
+  statusBar:{background:'#0d1520',borderBottom:'1px solid #1a2a3a',padding:'6px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'13px',fontFamily:'Rajdhani,sans-serif',letterSpacing:'0.5px'},
+  faultBanner:{background:'#8b0000',borderBottom:'2px solid #ff3333',padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',animation:'slideDown 0.3s ease',fontSize:'14px',fontWeight:600},
+  lowBatBanner:{background:'#7a4a00',borderBottom:'2px solid #ffaa00',padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',fontSize:'13px',fontWeight:600},
+  screen:{flex:1,overflowY:'auto',padding:'12px 14px'},
+  bottomNav:{background:'#0a1220',borderTop:'1px solid #1a2a3a',display:'flex',height:'56px'},
+  navBtn:(active)=>({flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'none',border:'none',cursor:'pointer',color:active?ACC:'#4a6a8a',borderTop:active?`2px solid ${ACC}`:'2px solid transparent',gap:'2px',transition:'all 0.2s',fontFamily:'Rajdhani,sans-serif'}),
+  navLabel:{fontSize:'11px',fontWeight:600,letterSpacing:'0.5px'},
+  card:{background:'#0d1828',border:'1px solid #1a2a3a',borderRadius:'10px',padding:'12px'},
+  btn:(color)=>({background:'none',border:`2px solid ${color||ACC}`,borderRadius:'8px',color:color||ACC,cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontWeight:700,letterSpacing:'1px',padding:'8px 16px',transition:'all 0.15s'}),
+};
+
+function FaultBanner({onDismiss}){
+  return React.createElement('div',{style:S.faultBanner},
+    React.createElement('span',null,'⚠ BMS FAULT — Cell 3 voltage variance detected. Do not charge until inspected.'),
+    React.createElement('button',{onClick:onDismiss,style:{background:'none',border:'1px solid #ff6666',color:'#ff9999',borderRadius:'6px',padding:'3px 10px',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontWeight:700,fontSize:'12px'}},'DISMISS')
+  );
+}
+
+function StatusBar({battery,range,fault}){
+  const batColor=battery<20?'#ff4444':battery<40?'#ffaa00':ACC;
+  return React.createElement('div',{style:S.statusBar},
+    React.createElement('span',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'13px',color:batColor}},`${battery}% · ${range}km`),
+    React.createElement('span',{style:{color:'#4a6a8a',fontSize:'12px'}},'KESTRA EV'),
+    React.createElement('span',{style:{fontSize:'12px',color:'#4a6a8a'}},new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))
+  );
+}
+
+function HomeScreen({battery,range,acOn,temp,speed,setScreen}){
+  const batColor=battery<20?'#ff4444':battery<40?'#ffaa00':'#00dd88';
+  const batW=`${battery}%`;
+  const dialR=90,cx=100,cy=110;
+  const angle=(speed/160)*180-90;
+  const rad=angle*Math.PI/180;
+  const nx=cx+80*Math.cos(rad),ny=cy+80*Math.sin(rad);
+  return React.createElement('div',{style:S.screen},
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'10px'}},
+      React.createElement('div',{style:{...S.card,cursor:'pointer',gridColumn:'1/-1'},onClick:()=>setScreen('energy')},
+        React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',marginBottom:'4px',letterSpacing:'1px'}},'BATTERY & RANGE'),
+        React.createElement('div',{style:{display:'flex',alignItems:'baseline',gap:'6px'}},
+          React.createElement('span',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'36px',fontWeight:900,color:batColor}},battery),
+          React.createElement('span',{style:{fontSize:'14px',color:'#4a6a8a'}},'% · '+range+'km')
+        ),
+        React.createElement('div',{style:{background:'#0a1020',borderRadius:'4px',height:'8px',marginTop:'8px'}},
+          React.createElement('div',{style:{width:batW,background:batColor,height:'8px',borderRadius:'4px',transition:'width 0.5s'}})
+        )
+      ),
+      React.createElement('div',{style:{...S.card,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',cursor:'pointer'},onClick:()=>setScreen('nav')},
+        React.createElement('svg',{width:200,height:130,viewBox:'0 0 200 130'},
+          React.createElement('path',{d:`M 10 110 A 90 90 0 0 1 190 110`,fill:'none',stroke:'#1a2a3a',strokeWidth:12,strokeLinecap:'round'}),
+          React.createElement('path',{d:`M 10 110 A 90 90 0 0 1 190 110`,fill:'none',stroke:ACC,strokeWidth:4,strokeLinecap:'round',strokeDasharray:`${(speed/160)*Math.PI*90} 1000`,opacity:0.7}),
+          React.createElement('line',{x1:100,y1:110,x2:nx,y2:ny,stroke:'#ffffff',strokeWidth:3,strokeLinecap:'round'}),
+          React.createElement('circle',{cx:100,cy:110,r:6,fill:ACC}),
+          React.createElement('text',{x:100,y:75,textAnchor:'middle',fontFamily:'Orbitron,sans-serif',fontSize:28,fontWeight:900,fill:'white'}),
+          React.createElement('text',{x:100,y:56,textAnchor:'middle',fontFamily:'Orbitron,sans-serif',fontSize:32,fontWeight:900,fill:'white'},speed),
+          React.createElement('text',{x:100,y:72,textAnchor:'middle',fontFamily:'Rajdhani,sans-serif',fontSize:13,fill:'#4a6a8a'},'km/h')
+        )
+      ),
+      React.createElement('div',{style:{...S.card,cursor:'pointer'},onClick:()=>setScreen('climate')},
+        React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',marginBottom:'4px',letterSpacing:'1px'}},'CLIMATE'),
+        React.createElement('div',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'28px',fontWeight:700,color:ACC}},temp+'°C'),
+        React.createElement('div',{style:{fontSize:'12px',marginTop:'4px',color:acOn?'#00dd88':'#4a6a8a',fontWeight:600}},acOn?'AC ON':'AC OFF')
+      ),
+      React.createElement('div',{style:{...S.card,cursor:'pointer'},onClick:()=>setScreen('nav')},
+        React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',marginBottom:'4px',letterSpacing:'1px'}},'NAVIGATION'),
+        React.createElement('div',{style:{fontSize:'14px',color:'#e8f4ff',fontWeight:600,marginTop:'4px'}},'Set Destination'),
+        React.createElement('div',{style:{fontSize:'12px',color:'#4a6a8a',marginTop:'4px'}},range+'km available')
+      )
+    ),
+    React.createElement('div',{style:{...S.card}},
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-around',textAlign:'center'}},
+        ...[['DRIVE','D'],['ECO','ECO'],['REGEN','HIGH'],['TEMP',temp+'°C']].map(([l,v])=>
+          React.createElement('div',{key:l},
+            React.createElement('div',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'16px',fontWeight:700,color:ACC}},v),
+            React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'0.5px'}},l)
+          )
+        )
+      )
+    )
+  );
+}
+
+function ClimateScreen({acOn,setAcOn,temp,setTemp,fan,setFan,mode,setMode}){
+  const tColor=temp<20?'#4488ff':temp>26?'#ff8844':'#00dd88';
+  return React.createElement('div',{style:S.screen},
+    React.createElement('div',{style:{...S.card,marginBottom:'10px',textAlign:'center',padding:'20px 12px'}},
+      React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'1px',marginBottom:'8px'}},'CABIN TEMPERATURE'),
+      React.createElement('div',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'80px',fontWeight:900,color:tColor,lineHeight:1}},temp),
+      React.createElement('div',{style:{fontSize:'18px',color:'#4a6a8a',marginBottom:'16px'}},'°C'),
+      React.createElement('div',{style:{display:'flex',justifyContent:'center',gap:'20px',alignItems:'center'}},
+        React.createElement('button',{onClick:()=>setTemp(t=>Math.max(16,t-1)),style:{width:64,height:64,borderRadius:'50%',border:'3px solid #4080ff',background:'#070f1e',color:'#4080ff',fontSize:'28px',fontWeight:900,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}},'−'),
+        React.createElement('button',{onClick:()=>setTemp(t=>Math.min(32,t+1)),style:{width:64,height:64,borderRadius:'50%',border:'3px solid #ff6040',background:'#1a0a00',color:'#ff6040',fontSize:'28px',fontWeight:900,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}},'+')
+      )
+    ),
+    React.createElement('button',{onClick:()=>setAcOn(v=>!v),style:{width:'100%',padding:'14px',borderRadius:'10px',border:`2px solid ${acOn?'#00dd88':'#2a3a4a'}`,background:acOn?'#002a18':'#0a1220',color:acOn?'#00dd88':'#4a6a8a',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontSize:'16px',fontWeight:700,letterSpacing:'1px',marginBottom:'10px',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',transition:'all 0.2s',boxShadow:acOn?'0 0 16px rgba(0,220,136,0.3)':'none'}},
+      React.createElement('span',{style:{width:12,height:12,borderRadius:'50%',background:acOn?'#00dd88':'#2a3a4a',display:'inline-block',boxShadow:acOn?'0 0 8px #00dd88':'none',transition:'all 0.2s'}}),
+      acOn?'AC ON — TAP TO TURN OFF':'AC OFF — TAP TO TURN ON'
+    ),
+    React.createElement('div',{style:{...S.card,marginBottom:'10px'}},
+      React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'1px',marginBottom:'8px'}},'FAN SPEED'),
+      React.createElement('div',{style:{display:'flex',gap:'6px'}},
+        ...['1','2','3','4','Auto'].map(f=>
+          React.createElement('button',{key:f,onClick:()=>setFan(f),style:{flex:1,padding:'10px 4px',borderRadius:'8px',border:`1px solid ${fan===f?ACC:'#1a2a3a'}`,background:fan===f?'#0a1e30':'#0a1220',color:fan===f?ACC:'#4a6a8a',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontSize:'14px',fontWeight:700,transition:'all 0.15s'}},f)
+        )
+      )
+    ),
+    React.createElement('div',{style:S.card},
+      React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'1px',marginBottom:'8px'}},'CLIMATE MODE'),
+      React.createElement('div',{style:{display:'flex',gap:'6px'}},
+        ...[['❄','Cool'],['🔥','Heat'],['💨','Vent'],['⚡','Auto']].map(([ic,m])=>
+          React.createElement('button',{key:m,onClick:()=>setMode(m),style:{flex:1,padding:'10px 4px',borderRadius:'8px',border:`1px solid ${mode===m?ACC:'#1a2a3a'}`,background:mode===m?'#0a1e30':'#0a1220',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',transition:'all 0.15s'}},
+            React.createElement('div',{style:{fontSize:'18px',marginBottom:'2px'}},ic),
+            React.createElement('div',{style:{fontSize:'11px',color:mode===m?ACC:'#4a6a8a',fontWeight:700}},m)
+          )
+        )
+      )
+    )
+  );
+}
+
+function NavScreen({battery,range}){
+  const [dest,setDest]=useState('');
+  const [active,setActive]=useState('Drive');
+  return React.createElement('div',{style:S.screen},
+    React.createElement('div',{style:{display:'flex',gap:'8px',marginBottom:'10px'}},
+      React.createElement('input',{value:dest,onChange:e=>setDest(e.target.value),placeholder:'Enter destination...',style:{flex:1,background:'#0d1828',border:'1px solid #1a2a3a',borderRadius:'8px',color:'#e8f4ff',padding:'10px 14px',fontFamily:'Rajdhani,sans-serif',fontSize:'15px',outline:'none'}}),
+      React.createElement('button',{style:{...S.btn(),padding:'10px 14px',fontSize:'18px'}},'🎤')
+    ),
+    React.createElement('div',{style:{...S.card,marginBottom:'10px',height:'220px',display:'flex',alignItems:'center',justifyContent:'center',background:'#060e18',border:'1px solid #1a2a3a',position:'relative',overflow:'hidden'}},
+      React.createElement('svg',{width:'100%',height:'100%',style:{position:'absolute',top:0,left:0}},
+        ...[0,1,2,3,4].map(i=>React.createElement('line',{key:'h'+i,x1:0,y1:44*i,x2:'100%',y2:44*i,stroke:'#0d1828',strokeWidth:1})),
+        ...[0,1,2,3,4,5,6].map(i=>React.createElement('line',{key:'v'+i,x1:60*i,y1:0,x2:60*i,y2:'100%',stroke:'#0d1828',strokeWidth:1})),
+        React.createElement('path',{d:'M 40 200 Q 150 120 200 80 Q 260 40 320 60',fill:'none',stroke:'#1a3a5a',strokeWidth:20,strokeLinecap:'round'}),
+        React.createElement('path',{d:'M 40 200 Q 150 120 200 80 Q 260 40 320 60',fill:'none',stroke:ACC,strokeWidth:3,strokeLinecap:'round',strokeDasharray:'8 6'}),
+        React.createElement('circle',{cx:200,cy:110,r:10,fill:ACC}),
+        React.createElement('circle',{cx:200,cy:110,r:6,fill:'white'}),
+      ),
+      React.createElement('div',{style:{position:'absolute',bottom:10,left:10,right:10,background:'rgba(8,12,18,0.9)',borderRadius:'8px',padding:'8px 12px',display:'flex',justifyContent:'space-between',fontSize:'13px'}},
+        React.createElement('span',{style:{color:ACC,fontFamily:'Orbitron,sans-serif'}},dest||'No route set'),
+        React.createElement('span',{style:{color:'#4a6a8a'}},range+'km range')
+      )
+    ),
+    React.createElement('div',{style:{...S.card,marginBottom:'10px'}},
+      React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'1px',marginBottom:'8px'}},'DRIVE MODE'),
+      React.createElement('div',{style:{display:'flex',gap:'6px'}},
+        ...['Drive','Eco','Sport'].map(m=>
+          React.createElement('button',{key:m,onClick:()=>setActive(m),style:{flex:1,padding:'10px',borderRadius:'8px',border:`1px solid ${active===m?ACC:'#1a2a3a'}`,background:active===m?'#0a1e30':'#0a1220',color:active===m?ACC:'#4a6a8a',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontSize:'14px',fontWeight:700,transition:'all 0.15s'}},m)
+        )
+      )
+    ),
+    React.createElement('div',{style:{...S.card,display:'flex',justifyContent:'space-between'}},
+      ...[['ETA','--:--'],['DIST','--km'],['ARRIVE','--:--'],['RANGE',range+'km']].map(([l,v])=>
+        React.createElement('div',{key:l,style:{textAlign:'center'}},
+          React.createElement('div',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'15px',color:ACC,fontWeight:700}},v),
+          React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'0.5px'}},l)
+        )
+      )
+    )
+  );
+}
+
+function EnergyScreen({battery,setBattery,range,setRange}){
+  const [charging,setCharging]=useState(false);
+  const [fault,setFaultE]=useState(false);
+  const chargeRef=useRef(null);
+  const batColor=battery<20?'#ff4444':battery<40?'#ffaa00':'#00dd88';
+  useEffect(()=>{
+    if(charging&&battery<100){
+      chargeRef.current=setInterval(()=>{
+        setBattery(b=>{if(b>=100){clearInterval(chargeRef.current);setCharging(false);return 100;}return b+1;});
+        setRange(r=>Math.min(500,r+3));
+      },400);
+    }else{clearInterval(chargeRef.current);}
+    return()=>clearInterval(chargeRef.current);
+  },[charging]);
+  const stats=[['CONSUMPTION','14.2 kWh/100km'],['REGEN SAVED','3.1 kWh'],['SOLAR ASSIST','0.8 kWh'],['CHARGE TIME',battery>=80?'Charged':'~'+(Math.round((100-battery)*2.1))+'min'],['EFFICIENCY','82%'],['SESSIONS TODAY','2']];
+  return React.createElement('div',{style:S.screen},
+    React.createElement('div',{style:{...S.card,marginBottom:'10px'}},
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}},
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:'11px',color:'#4a6a8a',letterSpacing:'1px'}},'BATTERY LEVEL'),
+          React.createElement('span',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'38px',fontWeight:900,color:batColor}},battery),
+          React.createElement('span',{style:{fontSize:'16px',color:'#4a6a8a',marginLeft:'4px'}},'% · '+range+'km')
+        ),
+        React.createElement('div',{style:{width:70,height:70,border:`2px solid ${batColor}`,borderRadius:'8px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}},
+          React.createElement('div',{style:{position:'absolute',bottom:0,width:'100%',background:batColor,height:`${battery}%`,transition:'height 0.5s',opacity:0.25}}),
+          React.createElement('span',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'16px',color:batColor,fontWeight:900,position:'relative'}},battery+'%')
+        )
+      ),
+      React.createElement('div',{style:{background:'#060e18',borderRadius:'6px',height:'36px',overflow:'hidden'}},
+        React.createElement('div',{style:{width:`${battery}%`,background:`linear-gradient(90deg,${batColor}aa,${batColor})`,height:'36px',borderRadius:'6px',transition:'width 0.5s',display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:'8px'}},
+          battery>15&&React.createElement('span',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'12px',color:'white',fontWeight:700}},battery+'%')
+        )
+      )
+    ),
+    battery<20&&React.createElement('div',{style:{...S.lowBatBanner,borderRadius:'8px',marginBottom:'10px',padding:'10px 14px'}},
+      React.createElement('span',null,'⚡ LOW BATTERY — Find nearest charging station'),
+      React.createElement('button',{style:{background:'#ffaa00',border:'none',borderRadius:'6px',padding:'4px 10px',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontWeight:700,fontSize:'12px',color:'#1a0a00'}},'FIND')
+    ),
+    fault&&React.createElement('div',{style:{background:'#3a0000',border:'1px solid #ff3333',borderRadius:'8px',padding:'12px 14px',marginBottom:'10px'}},
+      React.createElement('div',{style:{color:'#ff6666',fontWeight:700,marginBottom:'6px'}},'BMS Fault Active — Cell 3 voltage variance'),
+      React.createElement('button',{style:{width:'100%',padding:'10px',background:'#ff3333',border:'none',borderRadius:'8px',color:'white',fontFamily:'Rajdhani,sans-serif',fontWeight:700,fontSize:'14px',cursor:'pointer',letterSpacing:'1px'}},'CALL TECHNICIAN')
+    ),
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px',marginBottom:'10px'}},
+      ...stats.map(([l,v])=>
+        React.createElement('div',{key:l,style:{...S.card,padding:'10px 8px',textAlign:'center'}},
+          React.createElement('div',{style:{fontFamily:'Orbitron,sans-serif',fontSize:'13px',color:ACC,fontWeight:700,marginBottom:'3px'}},v),
+          React.createElement('div',{style:{fontSize:'10px',color:'#4a6a8a',letterSpacing:'0.5px'}},l)
+        )
+      )
+    ),
+    React.createElement('button',{onClick:()=>setCharging(v=>!v),style:{width:'100%',padding:'14px',borderRadius:'10px',border:`2px solid ${charging?'#00dd88':'#2a4a2a'}`,background:charging?'#002a18':'#0a1220',color:charging?'#00dd88':'#4a6a8a',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontSize:'16px',fontWeight:700,letterSpacing:'1px',marginBottom:'8px',transition:'all 0.2s'}},
+      charging?'⚡ CHARGING... TAP TO STOP':'TAP TO START CHARGING'
+    ),
+    React.createElement('button',{onClick:()=>setFaultE(v=>!v),style:{width:'100%',padding:'10px',borderRadius:'8px',border:'1px solid #3a1a1a',background:'none',color:'#4a6a8a',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontSize:'13px',letterSpacing:'1px'}},
+      fault?'CLEAR FAULT SIMULATION':'SIMULATE FAULT (DEMO)'
+    )
+  );
+}
+
+function App(){
+  const [screen,setScreen]=useState('home');
+  const [battery,setBattery]=useState(15);
+  const [range,setRange]=useState(72);
+  const [acOn,setAcOn]=useState(false);
+  const [temp,setTemp]=useState(24);
+  const [fan,setFan]=useState('2');
+  const [mode,setMode]=useState('Cool');
+  const [speed]=useState(68);
+  const [fault,setFault]=useState(false);
+  const [dismissed,setDismissed]=useState(false);
+  const showFault=fault&&!dismissed;
+  const tabs=[['home','🏠','HOME'],['climate','❄️','CLIMATE'],['nav','🗺️','NAV'],['energy','⚡','ENERGY']];
+  return React.createElement('div',{style:S.wrap},
+    React.createElement('style',null,`@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}`),
+    React.createElement(StatusBar,{battery,range,fault:showFault}),
+    showFault&&React.createElement(FaultBanner,{onDismiss:()=>{setDismissed(true);}}),
+    battery<20&&!showFault&&React.createElement('div',{style:S.lowBatBanner},
+      React.createElement('span',null,'⚡ Low Battery — '+battery+'% remaining'),
+      React.createElement('button',{onClick:()=>setScreen('energy'),style:{background:'#ffaa00',border:'none',borderRadius:'6px',padding:'3px 10px',cursor:'pointer',fontFamily:'Rajdhani,sans-serif',fontWeight:700,fontSize:'12px',color:'#1a0a00'}},'CHARGE')
+    ),
+    screen==='home'&&React.createElement(HomeScreen,{battery,range,acOn,temp,speed,setScreen}),
+    screen==='climate'&&React.createElement(ClimateScreen,{acOn,setAcOn,temp,setTemp,fan,setFan,mode,setMode}),
+    screen==='nav'&&React.createElement(NavScreen,{battery,range}),
+    screen==='energy'&&React.createElement(EnergyScreen,{battery,setBattery,range,setRange,fault,setFault}),
+    React.createElement('div',{style:S.bottomNav},
+      tabs.map(([id,ic,lb])=>
+        React.createElement('button',{key:id,onClick:()=>setScreen(id),style:S.navBtn(screen===id)},
+          React.createElement('span',{style:{fontSize:'18px'}},ic),
+          React.createElement('span',{style:S.navLabel},lb)
+        )
+      )
+    )
+  );
+}
+ReactDOM.createRoot(document.getElementById('kestra-root')).render(React.createElement(App));
+</script>
