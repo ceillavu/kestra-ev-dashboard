@@ -379,21 +379,13 @@
   .climate-temp-controls {
     display: flex; align-items: center; justify-content: center; gap: 24px;
   }
-  .temp-btn {
-    width: 52px; height: 52px; border-radius: 12px;
-    background: #111; color: white; border: none;
-    font-size: 22px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .temp-btn:hover { background: var(--purple); }
-  .temp-btn:active { transform: scale(0.93); }
+  /* temp-btn styles moved to ac/temp section above */
   .temp-display {
     font-family: var(--font-head); font-size: 52px; font-weight: 900;
     color: #111; text-align: center; line-height: 1;
   }
-  .cool-btn { background: #1a3a8f; }
-  .heat-btn { background: #c04000; }
+  .cool-btn-OLD { background: #1a3a8f; }
+  .heat-btn-OLD { background: #c04000; }
 
   .climate-dark-card {
     background: #0e0e1a; border-radius: 14px;
@@ -428,27 +420,69 @@
     display: flex; align-items: center; justify-content: center; gap: 24px;
   }
   .ac-label { font-size: 18px; font-weight: 700; color: #ccc; }
-  .toggle-switch {
-    width: 68px; height: 32px; border-radius: 16px;
-    background: var(--green); cursor: pointer;
-    display: flex; align-items: center; padding: 3px;
-    transition: background 0.25s;
-    border: none;
+
+  /* ---- NEW: Full-width AC toggle button ---- */
+  .ac-fullbtn {
+    width: 100%; padding: 14px 20px;
+    border-radius: 14px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    font-family: var(--font-head); font-size: 15px; font-weight: 700;
+    letter-spacing: 0.06em;
+    transition: background 0.25s, box-shadow 0.25s, transform 0.1s;
     position: relative;
   }
-  .toggle-switch.off { background: #444; }
-  .toggle-knob {
-    width: 26px; height: 26px; border-radius: 50%; background: white;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    pointer-events: none;
+  .ac-fullbtn.on {
+    background: #0e2a1a;
+    color: var(--green);
+    border: 1.5px solid rgba(0,224,122,0.3);
+    box-shadow: 0 0 18px rgba(0,224,122,0.25), inset 0 0 12px rgba(0,224,122,0.08);
   }
-  .toggle-switch:not(.off) .toggle-knob { transform: translateX(36px); }
-  .toggle-label {
-    position: absolute; left: 50%; transform: translateX(-50%);
-    font-family: var(--font-head); font-size: 11px; font-weight: 700;
-    color: white; pointer-events: none;
+  .ac-fullbtn.off {
+    background: #1c1c2e;
+    color: #666;
+    border: 1.5px solid #333;
+    box-shadow: none;
   }
+  .ac-fullbtn:active { transform: scale(0.98); }
+  .ac-glow-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.25s, box-shadow 0.25s;
+  }
+  .ac-fullbtn.on .ac-glow-dot {
+    background: var(--green);
+    box-shadow: 0 0 8px 2px rgba(0,224,122,0.8), 0 0 16px 4px rgba(0,224,122,0.4);
+  }
+  .ac-fullbtn.off .ac-glow-dot {
+    background: #444;
+    box-shadow: none;
+  }
+
+  /* Climate status line */
+  .climate-status-line {
+    font-size: 12px; color: #aaa; text-align: center; margin-top: 8px;
+    font-family: var(--font-body); letter-spacing: 0.02em;
+    min-height: 16px;
+    transition: color 0.3s;
+  }
+  .climate-status-line.active { color: var(--green); }
+
+  /* ---- NEW: Circular temperature buttons 64×64 ---- */
+  .temp-btn {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #111; color: white; border: 3px solid #333;
+    font-size: 26px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .temp-btn:active { transform: scale(0.93); }
+  .cool-btn { border-color: #4080ff; }
+  .cool-btn:hover { background: #0d1f5a; box-shadow: 0 0 14px rgba(64,128,255,0.5); }
+  .heat-btn { border-color: #ff6040; }
+  .heat-btn:hover { background: #5a1500; box-shadow: 0 0 14px rgba(255,96,64,0.5); }
+
+  /* Dynamic temp display colour handled via JS inline style */
 
   .climate-modes-row {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
@@ -813,6 +847,87 @@
     font-family: var(--font-head); font-size: 11px; cursor: pointer;
   }
 
+  /* ========== PERSISTENT FAULT BANNER ========== */
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .fault-banner {
+    display: none;
+    position: fixed; top: 56px; left: 0; right: 0;
+    z-index: 90;
+    background: linear-gradient(90deg, #b81010 0%, #d42020 100%);
+    color: white;
+    padding: 10px 16px;
+    align-items: center; gap: 10px;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+    animation: slideDown 0.35s cubic-bezier(0.34,1.1,0.64,1);
+    box-shadow: 0 4px 20px rgba(180,0,0,0.4);
+  }
+  .fault-banner.show { display: flex; }
+  .fault-banner-icon { font-size: 20px; flex-shrink: 0; }
+  .fault-banner-text { flex: 1; }
+  .fault-banner-title {
+    font-family: var(--font-head); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.06em; margin-bottom: 2px;
+  }
+  .fault-banner-desc { font-size: 12px; color: rgba(255,255,255,0.88); line-height: 1.3; }
+  .fault-banner-dismiss {
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+    color: white; border-radius: 8px; padding: 5px 12px;
+    font-family: var(--font-head); font-size: 10px; font-weight: 700;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .fault-banner-dismiss:hover { background: rgba(255,255,255,0.3); }
+
+  /* Push screens down when banner is active */
+  body.fault-active .header { top: 0; }
+  body.fault-active .screen { padding-top: 44px; }
+  @media (max-width: 768px) {
+    .fault-banner { top: 50px; }
+    body.fault-active .screen { padding-top: 40px; }
+  }
+
+  /* ========== ENERGY SCREEN FAULT PANEL ========== */
+  .energy-fault-panel {
+    background: #1a0000; border: 1.5px solid #c00; border-radius: 14px;
+    padding: 16px 18px; display: none; flex-direction: column; gap: 12px;
+  }
+  .energy-fault-panel.show { display: flex; }
+  .efp-header { display: flex; align-items: center; gap: 10px; }
+  .efp-icon { font-size: 24px; }
+  .efp-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: #ff6060; flex: 1; }
+  .efp-desc { font-size: 12px; color: #ffaaaa; line-height: 1.5; }
+  .efp-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .efp-call-btn {
+    flex: 1; min-width: 120px;
+    background: var(--red); border: none; border-radius: 10px;
+    padding: 11px 16px; color: white;
+    font-family: var(--font-head); font-size: 12px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center;
+    transition: filter 0.15s;
+  }
+  .efp-call-btn:hover { filter: brightness(1.15); }
+  .efp-toggle-btn {
+    background: #333; border: 1px solid #555; border-radius: 10px;
+    padding: 11px 16px; color: #aaa;
+    font-family: var(--font-head); font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .efp-toggle-btn:hover { background: #444; color: white; }
+
+  /* Larger battery bar on energy screen */
+  .batt-bar-e {
+    border-radius: 4px 4px 0 0;
+    flex-shrink: 0;
+    transition: height 0.4s;
+  }
+  .batt-chart-area {
+    display: flex; align-items: flex-end; gap: 8px;
+    height: 150px; padding: 8px 0;
+  }
+
   /* Glare overlay for startup */
   .glare-overlay {
     position: fixed; inset: 0; background: white; z-index: 999;
@@ -952,6 +1067,16 @@
     </div>
   </div>
 </header>
+
+<!-- PERSISTENT FAULT BANNER -->
+<div class="fault-banner" id="faultBanner">
+  <span class="fault-banner-icon">⚠️</span>
+  <div class="fault-banner-text">
+    <div class="fault-banner-title">VEHICLE FAULT DETECTED</div>
+    <div class="fault-banner-desc" id="faultBannerDesc">Battery sensor is not responding correctly — please contact a technician.</div>
+  </div>
+  <button class="fault-banner-dismiss" onclick="dismissFault()">Dismiss ✕</button>
+</div>
 
 <!-- ======== HOME SCREEN ======== -->
 <div class="screen active" id="screen-home">
@@ -1094,13 +1219,11 @@
     </div>
     <!-- A/C Toggle -->
     <div class="climate-dark-card">
-      <div class="ac-toggle-row">
-        <span class="ac-label">A/C</span>
-        <button class="toggle-switch" id="acToggle" onclick="toggleAC()">
-          <div class="toggle-knob"></div>
-          <span class="toggle-label" id="acLabel">ON</span>
-        </button>
-      </div>
+      <button class="ac-fullbtn on" id="acToggle" onclick="toggleAC()">
+        <span class="ac-glow-dot"></span>
+        <span id="acLabel">AC ON</span>
+      </button>
+      <div class="climate-status-line active" id="climateStatusLine">Fan Speed: Auto · Cooling active</div>
     </div>
     <!-- Mode buttons -->
     <div class="climate-dark-card">
@@ -1286,10 +1409,10 @@
         <div class="batt-range-e" id="energyBattRange">Range 10 km</div>
       </div>
       <div class="batt-chart-area" id="energyBattChart">
-        <div class="batt-bar-e" style="width:28px;height:28px;background:#c00;"></div>
-        <div class="batt-bar-e" style="width:28px;height:56px;background:#444;"></div>
-        <div class="batt-bar-e" style="width:28px;height:90px;background:#444;"></div>
-        <div class="batt-bar-e" style="width:28px;height:120px;background:#444;"></div>
+        <div class="batt-bar-e" style="width:36px;height:36px;background:#c00;"></div>
+        <div class="batt-bar-e" style="width:36px;height:72px;background:#444;"></div>
+        <div class="batt-bar-e" style="width:36px;height:108px;background:#444;"></div>
+        <div class="batt-bar-e" style="width:36px;height:144px;background:#444;"></div>
       </div>
     </div>
     <!-- Stats grid -->
@@ -1319,15 +1442,18 @@
         <div class="ecard-tag">&#x2191; Today</div>
       </div>
     </div>
-    <!-- Alert bar -->
-    <button class="energy-alert-bar" onclick="showAlertModal()">
-      <span class="energy-alert-icon">&#x26A0;&#xFE0F;</span>
-      <div class="energy-alert-text">
-        <div class="energy-alert-title">ALERT: Battery Sensor Issues Detected</div>
-        <div class="energy-alert-desc">There may be an issue with the battery sensor. Please contact a technician for inspection.</div>
+    <!-- Expanded Fault Panel (Energy screen only) -->
+    <div class="energy-fault-panel show" id="energyFaultPanel">
+      <div class="efp-header">
+        <span class="efp-icon">⚠️</span>
+        <span class="efp-title">BATTERY SENSOR FAULT</span>
       </div>
-      <span class="energy-alert-arrow">›</span>
-    </button>
+      <div class="efp-desc">The battery management sensor is not responding correctly. This may affect range estimates and charging accuracy. Drive with caution and seek service soon.</div>
+      <div class="efp-actions">
+        <button class="efp-call-btn" onclick="callTechnician()">📞 Call Technician</button>
+        <button class="efp-toggle-btn" id="faultSimToggle" onclick="toggleFaultSim()">Dismiss Fault (Demo)</button>
+      </div>
+    </div>
     <!-- Charging bar -->
     <button class="energy-charging-bar" onclick="showChargingModal()">
       <span class="energy-charging-icon">&#x1F4CD;</span>
@@ -1629,12 +1755,26 @@
     currentScreen = screen;
   }
 
+  function updateTempColor() {
+    const el = document.getElementById('tempDisplay');
+    if (!el) return;
+    if (temperature < 20) {
+      el.style.color = '#4080ff';
+    } else if (temperature <= 26) {
+      el.style.color = '#00b860';
+    } else {
+      el.style.color = '#ff6040';
+    }
+  }
+
   // ========== TEMPERATURE ==========
   function changeTemp(delta) {
     const prev = temperature;
     temperature = Math.max(16, Math.min(30, temperature + delta));
     document.getElementById('tempDisplay').textContent = temperature + '°C';
     document.getElementById('homeTempDisplay').textContent = temperature + '°C';
+    updateTempColor();
+    updateClimateStatus();
     lastAction = { type: 'temp', val: prev };
     showUndo('Temperature set to ' + temperature + '°C');
   }
@@ -1645,8 +1785,23 @@
     currentFan = level;
     document.querySelectorAll('.fan-speed-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('fan' + level).classList.add('active');
+    updateClimateStatus();
     lastAction = { type: 'fan', val: prev };
     showUndo('Fan set to ' + (level === 0 ? 'Auto' : 'Speed ' + level));
+  }
+
+  function updateClimateStatus() {
+    const line = document.getElementById('climateStatusLine');
+    if (!line) return;
+    if (!acOn) {
+      line.textContent = 'A/C is off — ventilation only';
+      line.className = 'climate-status-line';
+    } else {
+      const fanNames = ['Auto', 'Low', 'Med-Low', 'Medium', 'High'];
+      const fanLabel = fanNames[currentFan] || 'Auto';
+      line.textContent = 'Fan Speed: ' + fanLabel + ' · ' + (currentMode.charAt(0).toUpperCase() + currentMode.slice(1)) + ' active';
+      line.className = 'climate-status-line active';
+    }
   }
 
   // ========== AC TOGGLE ==========
@@ -1657,11 +1812,14 @@
     const lbl = document.getElementById('acLabel');
     if (acOn) {
       btn.classList.remove('off');
-      lbl.textContent = 'ON';
+      btn.classList.add('on');
+      lbl.textContent = 'AC ON';
     } else {
+      btn.classList.remove('on');
       btn.classList.add('off');
-      lbl.textContent = 'OFF';
+      lbl.textContent = 'AC OFF';
     }
+    updateClimateStatus();
     lastAction = { type: 'ac', val: prev };
     showUndo('A/C turned ' + (acOn ? 'ON' : 'OFF'));
   }
@@ -1672,6 +1830,7 @@
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentMode = mode;
+    updateClimateStatus();
     lastAction = { type: 'mode', val: prev };
   }
 
@@ -1699,8 +1858,9 @@
       acOn = val;
       const btn = document.getElementById('acToggle');
       const lbl = document.getElementById('acLabel');
-      if (acOn) { btn.classList.remove('off'); lbl.textContent = 'ON'; }
-      else { btn.classList.add('off'); lbl.textContent = 'OFF'; }
+      if (acOn) { btn.classList.remove('off'); btn.classList.add('on'); lbl.textContent = 'AC ON'; }
+      else { btn.classList.remove('on'); btn.classList.add('off'); lbl.textContent = 'AC OFF'; }
+      updateClimateStatus();
     } else if (type === 'mode') {
       // revert mode
       const modeBtns = document.querySelectorAll('.mode-btn');
@@ -1908,7 +2068,7 @@
     document.getElementById('energyBattPct').style.color = colorHex;
     document.getElementById('energyBattRange').textContent = 'Range ' + range + ' km';
     const energyBars = document.getElementById('energyBattChart').querySelectorAll('.batt-bar-e');
-    const eHeights = [28, 56, 90, 120];
+    const eHeights = [36, 72, 108, 144];
     energyBars.forEach((bar, i) => {
       const threshold = (i + 1) * (100 / energyBars.length);
       bar.style.height = eHeights[i] + 'px';
@@ -2079,7 +2239,46 @@
     if (g) g.remove();
   }, 1900);
 
+  // ========== FAULT BANNER ==========
+  let faultActive = true; // starts active for demo
+
+  function showFault(description) {
+    faultActive = true;
+    document.getElementById('faultBannerDesc').textContent = description || 'Battery sensor is not responding correctly — please contact a technician.';
+    document.getElementById('faultBanner').classList.add('show');
+    document.body.classList.add('fault-active');
+    // Show energy panel
+    const panel = document.getElementById('energyFaultPanel');
+    if (panel) panel.classList.add('show');
+    const btn = document.getElementById('faultSimToggle');
+    if (btn) btn.textContent = 'Dismiss Fault (Demo)';
+  }
+
+  function dismissFault() {
+    faultActive = false;
+    document.getElementById('faultBanner').classList.remove('show');
+    document.body.classList.remove('fault-active');
+  }
+
+  function toggleFaultSim() {
+    if (faultActive) {
+      dismissFault();
+      const panel = document.getElementById('energyFaultPanel');
+      if (panel) panel.classList.remove('show');
+      const btn = document.getElementById('faultSimToggle');
+      if (btn) btn.textContent = 'Activate Fault (Demo)';
+    } else {
+      showFault('Battery sensor is not responding correctly — please contact a technician.');
+    }
+  }
+
+  // Init: show banner on load
+  showFault('Battery sensor is not responding correctly — please contact a technician.');
+
   // ========== SPEED ANIMATION ==========
+  // init climate display
+  updateTempColor();
+  updateClimateStatus();
   let speed = 70, speedDir = 1;
   setInterval(() => {
     speed += speedDir * (Math.random() * 2 | 0);
